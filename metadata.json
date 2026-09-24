@@ -1,6 +1,0 @@
-{
-  "name": "Snake Game Mobile",
-  "description": "A mobile-first, responsive dark modern classic Snake Game with touch buttons, swipe controls, and keyboard support.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
