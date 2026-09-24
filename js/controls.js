@@ -1,195 +1,80 @@
-/**
- * Snake Game - Controls Module
- * Handles touch swipe gestures and desktop keyboard controls.
- * Features:
- * - One swipe per touch gesture
- * - 25px minimum swipe threshold to prevent accidental taps
- * - Input queue buffering (up to 2 pending moves)
- * - 180-degree immediate reversal protection
- */
+// js/controls.js
 
-export const DIRECTIONS = {
-  UP: { x: 0, y: -1, name: 'UP' },
-  DOWN: { x: 0, y: 1, name: 'DOWN' },
-  LEFT: { x: -1, y: 0, name: 'LEFT' },
-  RIGHT: { x: 1, y: 0, name: 'RIGHT' },
-};
+const SWIPE_THRESHOLD = 25;
+let inputQueue = [];
+let currentDir = { x: 1, y: 0 }; // default right
 
-/**
- * Checks if two directions are exact opposites
- * @param {{x: number, y: number}} d1 
- * @param {{x: number, y: number}} d2 
- * @returns {boolean}
- */
-export function isOpposite(d1, d2) {
-  if (!d1 || !d2) return false;
-  return d1.x === -d2.x && d1.y === -d2.y;
-}
+let touchStartX = 0;
+let touchStartY = 0;
 
-/**
- * Sets up touch swipe and keyboard controls
- * @param {Object} options
- * @param {HTMLElement} options.targetElement - Element to listen for touch gestures (Canvas)
- * @param {Function} options.onValidDirection - Callback when a valid, non-reverse direction is detected
- * @param {Function} options.onTogglePause - Callback to toggle pause
- * @param {Function} options.onRestart - Callback to restart game
- * @param {Function} options.canAcceptInput - Checks if game is in a state to accept move inputs
- */
-export function setupControls({
-  targetElement,
-  onValidDirection,
-  onTogglePause,
-  onRestart,
-  canAcceptInput
-}) {
-  const MIN_SWIPE_DISTANCE = 25; // 25px threshold as specified (20-30px)
-
-  let startX = 0;
-  let startY = 0;
-  let swipeRecognized = false;
-  let isTouching = false;
-
-  /* -------------------------------------------------------------
-     1. Touch Swipe System (Mobile Primary Control)
-     ------------------------------------------------------------- */
-  if (targetElement) {
-    targetElement.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        swipeRecognized = false;
-        isTouching = true;
-      }
-    }, { passive: true });
-
-    targetElement.addEventListener('touchmove', (e) => {
-      // Prevent browser scrolling and gesture zooming while touching the game board
-      if (isTouching && e.cancelable) {
-        e.preventDefault();
-      }
-
-      // Check if threshold is reached during move for responsive turning
-      if (isTouching && !swipeRecognized && e.touches.length === 1) {
-        const currentX = e.touches[0].clientX;
-        const currentY = e.touches[0].clientY;
-        const dx = currentX - startX;
-        const dy = currentY - startY;
-        const absDx = Math.abs(dx);
-        const absDy = Math.abs(dy);
-
-        if (absDx >= MIN_SWIPE_DISTANCE || absDy >= MIN_SWIPE_DISTANCE) {
-          processSwipe(dx, dy);
-          swipeRecognized = true; // One swipe = One turn!
-        }
-      }
+export function initControls(canvas) {
+    // Touch Events (Mobile)
+    canvas.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
     }, { passive: false });
 
-    const handleTouchEnd = (e) => {
-      if (!isTouching) return;
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Stop browser scrolling on board
+    }, { passive: false });
 
-      // If user quickly lifted finger and threshold wasn't handled in touchmove yet
-      if (!swipeRecognized && e.changedTouches.length === 1) {
-        const endX = e.changedTouches[0].clientX;
-        const endY = e.changedTouches[0].clientY;
-        const dx = endX - startX;
-        const dy = endY - startY;
-        const absDx = Math.abs(dx);
-        const absDy = Math.abs(dy);
+    canvas.addEventListener('touchend', (e) => {
+        let touchEndX = e.changedTouches[0].screenX;
+        let touchEndY = e.changedTouches[0].screenY;
+        handleInput(touchEndX - touchStartX, touchEndY - touchStartY);
+    }, { passive: false });
 
-        if (absDx >= MIN_SWIPE_DISTANCE || absDy >= MIN_SWIPE_DISTANCE) {
-          processSwipe(dx, dy);
+    // Keyboard Events (Desktop Support)
+    window.addEventListener('keydown', (e) => {
+        switch(e.key) {
+            case 'ArrowUp': case 'w': case 'W': handleKey({x: 0, y: -1}); break;
+            case 'ArrowDown': case 's': case 'S': handleKey({x: 0, y: 1}); break;
+            case 'ArrowLeft': case 'a': case 'A': handleKey({x: -1, y: 0}); break;
+            case 'ArrowRight': case 'd': case 'D': handleKey({x: 1, y: 0}); break;
         }
-      }
+    });
+}
 
-      isTouching = false;
-      swipeRecognized = false;
-    };
+function handleInput(dx, dy) {
+    if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return;
 
-    targetElement.addEventListener('touchend', handleTouchEnd, { passive: true });
-    targetElement.addEventListener('touchcancel', handleTouchEnd, { passive: true });
-  }
-
-  /**
-   * Translates dx & dy into directional command
-   */
-  function processSwipe(dx, dy) {
-    if (canAcceptInput && !canAcceptInput()) return;
-
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-
-    if (absDx > absDy) {
-      // Horizontal swipe
-      if (dx > 0) {
-        onValidDirection(DIRECTIONS.RIGHT);
-      } else {
-        onValidDirection(DIRECTIONS.LEFT);
-      }
-    } else if (absDy > absDx) {
-      // Vertical swipe
-      if (dy > 0) {
-        onValidDirection(DIRECTIONS.DOWN);
-      } else {
-        onValidDirection(DIRECTIONS.UP);
-      }
+    let newDir = null;
+    if (Math.abs(dx) > Math.abs(dy)) {
+        newDir = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 }; // Right or Left
+    } else {
+        newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 }; // Down or Up
     }
-  }
 
-  /* -------------------------------------------------------------
-     2. Keyboard Controls (Desktop Support)
-     ------------------------------------------------------------- */
-  window.addEventListener('keydown', (e) => {
-    switch (e.key) {
-      case 'ArrowUp':
-      case 'w':
-      case 'W':
-        e.preventDefault();
-        if (!canAcceptInput || canAcceptInput()) {
-          onValidDirection(DIRECTIONS.UP);
-        }
-        break;
+    if (newDir) addInput(newDir);
+}
 
-      case 'ArrowDown':
-      case 's':
-      case 'S':
-        e.preventDefault();
-        if (!canAcceptInput || canAcceptInput()) {
-          onValidDirection(DIRECTIONS.DOWN);
-        }
-        break;
+function handleKey(newDir) {
+    addInput(newDir);
+}
 
-      case 'ArrowLeft':
-      case 'a':
-      case 'A':
-        e.preventDefault();
-        if (!canAcceptInput || canAcceptInput()) {
-          onValidDirection(DIRECTIONS.LEFT);
-        }
-        break;
+function addInput(newDir) {
+    if (inputQueue.length >= 2) return; // Input queue limit (max 2 pending)
 
-      case 'ArrowRight':
-      case 'd':
-      case 'D':
-        e.preventDefault();
-        if (!canAcceptInput || canAcceptInput()) {
-          onValidDirection(DIRECTIONS.RIGHT);
-        }
-        break;
+    let lastDir = inputQueue.length > 0 ? inputQueue[inputQueue.length - 1] : currentDir;
 
-      case ' ':
-      case 'p':
-      case 'P':
-        e.preventDefault();
-        if (onTogglePause) onTogglePause();
-        break;
+    // 180 Degree Reverse Protection
+    if (newDir.x !== 0 && newDir.x === -lastDir.x) return;
+    if (newDir.y !== 0 && newDir.y === -lastDir.y) return;
 
-      case 'Enter':
-        e.preventDefault();
-        if (onRestart) onRestart();
-        break;
+    // Prevent same consecutive directions
+    if (newDir.x === lastDir.x && newDir.y === lastDir.y) return;
 
-      default:
-        break;
+    inputQueue.push(newDir);
+}
+
+export function getNextDirection() {
+    if (inputQueue.length > 0) {
+        currentDir = inputQueue.shift();
     }
-  });
+    return currentDir;
+}
+
+export function resetControls() {
+    inputQueue = [];
+    currentDir = { x: 1, y: 0 };
 }
