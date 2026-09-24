@@ -1,126 +1,52 @@
-/**
- * Snake Game - UI Module
- * Handles Score, Best Score, Pause Modal, and Game Over Screen.
- */
+// js/ui.js
 
-let currentScoreEl = null;
-let highScoreEl = null;
-let gameOverOverlay = null;
-let finalScoreEl = null;
-let bestScoreEl = null;
-let restartBtn = null;
-let pauseOverlay = null;
-let resumeBtn = null;
-let pauseToggleBtn = null;
+const scoreEl = document.getElementById('currentScore');
+const bestScoreEl = document.getElementById('bestScore');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const gameOverOverlay = document.getElementById('gameOverOverlay');
+const finalScoreEl = document.getElementById('finalScore');
+const finalBestScoreEl = document.getElementById('finalBestScore');
 
-/**
- * Initializes UI element references and listeners
- * @param {Object} options
- * @param {Function} options.onRestart - Restart game callback
- * @param {Function} options.onTogglePause - Pause/Resume toggle callback
- */
-export function initUI({ onRestart, onTogglePause }) {
-  currentScoreEl = document.getElementById('current-score');
-  highScoreEl = document.getElementById('high-score');
-  gameOverOverlay = document.getElementById('game-over-overlay');
-  finalScoreEl = document.getElementById('final-score');
-  bestScoreEl = document.getElementById('best-score');
-  restartBtn = document.getElementById('restart-btn');
-  pauseOverlay = document.getElementById('pause-overlay');
-  resumeBtn = document.getElementById('resume-btn');
-  pauseToggleBtn = document.getElementById('pause-toggle-btn');
+let bestScore = 0;
 
-  if (restartBtn && onRestart) {
-    restartBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      onRestart();
-    });
-  }
+export function initUI(callbacks) {
+    // Load Best Score
+    const savedBest = localStorage.getItem('snake_game_best_score');
+    if (savedBest) bestScore = parseInt(savedBest);
+    bestScoreEl.innerText = bestScore;
 
-  if (resumeBtn && onTogglePause) {
-    resumeBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      onTogglePause();
-    });
-  }
-
-  if (pauseToggleBtn && onTogglePause) {
-    pauseToggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      onTogglePause();
-    });
-  }
+    // Bind Buttons
+    document.getElementById('pauseBtn').addEventListener('click', callbacks.onPauseToggle);
+    document.getElementById('resumeBtn').addEventListener('click', callbacks.onResume);
+    document.getElementById('restartBtn').addEventListener('click', callbacks.onRestart);
 }
 
-/**
- * Updates score and best score display
- * @param {number} score 
- * @param {number} highScore 
- */
-export function updateScore(score, highScore) {
-  if (currentScoreEl) {
-    currentScoreEl.textContent = String(score);
-  }
-  if (highScoreEl) {
-    highScoreEl.textContent = String(highScore);
-  }
+export function updateScore(score) {
+    scoreEl.innerText = score;
+    if (score > bestScore) {
+        bestScore = score;
+        bestScoreEl.innerText = bestScore;
+        localStorage.setItem('snake_game_best_score', bestScore);
+    }
 }
 
-/**
- * Displays Game Over screen
- * @param {number} score 
- * @param {number} highScore 
- */
-export function showGameOver(score, highScore) {
-  if (finalScoreEl) finalScoreEl.textContent = String(score);
-  if (bestScoreEl) bestScoreEl.textContent = String(highScore);
-  if (gameOverOverlay) gameOverOverlay.classList.add('active');
-  if (pauseOverlay) pauseOverlay.classList.remove('active');
+export function showGameOver(score) {
+    hideAllOverlays();
+    finalScoreEl.innerText = score;
+    finalBestScoreEl.innerText = bestScore;
+    gameOverOverlay.classList.add('active');
 }
 
-/**
- * Hides Game Over screen
- */
-export function hideGameOver() {
-  if (gameOverOverlay) gameOverOverlay.classList.remove('active');
-}
-
-/**
- * Shows Pause overlay
- */
 export function showPause() {
-  if (pauseOverlay) pauseOverlay.classList.add('active');
-  updatePauseButton(true);
+    hideAllOverlays();
+    pauseOverlay.classList.add('active');
 }
 
-/**
- * Hides Pause overlay
- */
-export function hidePause() {
-  if (pauseOverlay) pauseOverlay.classList.remove('active');
-  updatePauseButton(false);
+export function hideAllOverlays() {
+    pauseOverlay.classList.remove('active');
+    gameOverOverlay.classList.remove('active');
 }
 
-/**
- * Updates pause button icon
- * @param {boolean} isPaused 
- */
-export function updatePauseButton(isPaused) {
-  if (!pauseToggleBtn) return;
-  if (isPaused) {
-    pauseToggleBtn.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-      </svg>
-    `;
-    pauseToggleBtn.setAttribute('aria-label', 'Resume Game');
-  } else {
-    pauseToggleBtn.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <rect x="6" y="4" width="4" height="16"></rect>
-        <rect x="14" y="4" width="4" height="16"></rect>
-      </svg>
-    `;
-    pauseToggleBtn.setAttribute('aria-label', 'Pause Game');
-  }
+export function resetUIScore() {
+    scoreEl.innerText = "0";
 }
