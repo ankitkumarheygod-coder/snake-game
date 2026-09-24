@@ -1,70 +1,29 @@
-# 🐍 Mobile-First Snake Game
+# Mobile Snake Game (GitHub Pages Ready)
 
-A high-performance, mobile-first Snake Game designed specifically for Android and mobile screens. Control the Snake smoothly using touch swipe gestures on the board, featuring wrap-around boundaries, intelligent self-collision detection, and a fluid 60FPS canvas loop.
+A modern, mobile-first, zero-dependency classic Snake Game built purely with HTML, CSS, and Vanilla JavaScript (ES Modules).
 
----
+## 🚀 Features
+- **Mobile-First Touch Controls**: 100% control by swiping anywhere on the game board. NO on-screen buttons!
+- **Accidental Touch Prevention**: Smart input queue and swipe threshold (~25px).
+- **Wrap-Around Boundary**: Hitting the wall doesn't end the game; the snake wraps around to the other side.
+- **Self-Collision Logic**: Game over ONLY happens if the snake hits its own body.
+- **High DPI Rendering**: Sharp canvas graphics natively scaled for high pixel-density mobile screens.
+- **Save State**: Best Score is cached natively in `localStorage`.
 
-## 📁 Project Structure
+## 🛠️ Setup / Deployment
+This game doesn't require any build system, bundler (like Webpack or Vite), or server. 
 
-```text
-snake-game/
-│
-├── index.html          # Clean HTML structure without inline styles or scripts
-│
-├── css/
-│   └── style.css       # Clean, modern dark theme & responsive board layout
-│
-├── js/
-│   ├── game.js         # Core game state, wrap-around logic, and requestAnimationFrame loop
-│   ├── controls.js     # Touch swipe recognition, input buffering & keyboard controls
-│   ├── food.js         # Safe food generation & vibrant apple rendering
-│   └── ui.js           # Score, Best score (localStorage), Pause & Game Over screens
-│
-└── README.md           # Documentation & instructions
-```
+### To Deploy on GitHub Pages:
+1. Create a new GitHub repository.
+2. Upload all the files maintaining the exact folder structure:
+   - `index.html`
+   - `css/style.css`
+   - `js/game.js`, `js/controls.js`, `js/food.js`, `js/ui.js`
+3. Go to **Settings > Pages**.
+4. Set the source branch to `main` (or `master`) and folder to `/(root)`.
+5. Click Save. Within a minute, your game will be live via the given URL!
 
----
-
-## 🎮 Key Features & Rules
-
-1. **Touch Swipe Controls (No On-Screen Buttons)**:
-   - **No D-pad**, no direction buttons, and no extra bottom panel cluttering the mobile view.
-   - User controls the snake by swiping on the board:
-     - **Swipe Up**: Snake turns UP
-     - **Swipe Down**: Snake turns DOWN
-     - **Swipe Left**: Snake turns LEFT
-     - **Swipe Right**: Snake turns RIGHT
-   - **Minimum Swipe Distance**: 25px threshold prevents accidental touches.
-   - **One Swipe = One Turn**: Each gesture triggers exactly one direction change.
-   - `touch-action: none` ensures the webpage never scrolls while swiping.
-
-2. **Wrap-Around Outer Boundaries**:
-   - **Wall collision never causes Game Over**.
-   - Crossing any wall safely wraps the Snake to the opposite edge:
-     - Exiting Left $\rightarrow$ Enters Right
-     - Exiting Right $\rightarrow$ Enters Left
-     - Exiting Top $\rightarrow$ Enters Bottom
-     - Exiting Bottom $\rightarrow$ Enters Top
-
-3. **Self-Collision Game Over**:
-   - Game Over occurs **only** when the Snake's head bites into any segment of its own body.
-
-4. **Input Queue & Anti-Reversal Protection**:
-   - Instant 180° reversals are blocked (e.g., swiping Left while moving Right is ignored).
-   - Rapid consecutive swipes (e.g., Up then Left) are queued and smoothly executed one per tick.
-
-5. **Score & Best Score**:
-   - Food increases score by **+10 points** and increases body length by 1 segment.
-   - High score is automatically persisted in `localStorage`.
-   - Restart cleanly resets current score to 0 while preserving the Best score.
-
-6. **Desktop Support**:
-   - Full keyboard support: Arrow keys and **W / A / S / D**.
-   - `Space` or `P` toggles pause.
-   - `Enter` restarts when Game Over.
-
----
-
-## 🚀 How to Run
-
-Open `index.html` directly in your browser or run any static web server (such as Vite, Live Server, or Python `http.server`).
+## 🎮 How to Play
+- **Mobile**: Swipe `Up`, `Down`, `Left`, or `Right` directly on the game board. 
+- **Desktop**: Use `Arrow Keys` or `W, A, S, D`.
+- **Rules**: Eat the red food to grow and speed up. Avoid hitting your own green body!
